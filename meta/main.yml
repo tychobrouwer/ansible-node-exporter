@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  role_name: node-exporter
+  role_name: node_exporter
   namespace: tychobrouwer
   author: Tycho Brouwer
   description: Install and configure Prometheus Node Exporter
