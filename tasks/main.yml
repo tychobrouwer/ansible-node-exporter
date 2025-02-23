@@ -1,2 +1,58 @@
 ---
 # tasks file for prometheus node exporter
+- name: Get latest version of Prometheus Node Exporter
+  ansible.builtin.uri:
+    url: "{{ node_exporter_latest_url }}"
+    return_content: true
+  register: node_exporter_latest
+
+- name: Parse the JSON response to get the download URL for {{ node_exporter_arch }}
+  ansible.builtin.set_fact:
+    linux_download_url: "{{ item.browser_download_url }}"
+  loop: "{{ node_exporter_latest.json.assets | selectattr('browser_download_url', 'search', 'linux_' + node_exporter_arch) | list }}"
+  when: linux_download_url is not defined
+
+- name: Ensure Prometheus directory exists
+  ansible.builtin.file:
+    path: "{{ node_exporter_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Download the latest version of Prometheus Node Exporter
+  ansible.builtin.unarchive:
+    src: "{{ linux_download_url }}"
+    dest: "{{ node_exporter_dir }}"
+    remote_src: true
+    mode: "0755"
+    owner: root
+    group: root
+  notify: Restart Node Exporter
+
+- name: Get Prometheus Node Exporter binary path
+  ansible.builtin.set_fact:
+    node_exporter_bin: "{{ linux_download_url.split('/')[-1].split('.tar.gz')[0] }}"
+
+- name: Ensure Prometheus Node Exporter symlink is created
+  ansible.builtin.file:
+    src: "{{ node_exporter_dir }}/{{ node_exporter_bin }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    state: link
+    owner: root
+    group: root
+
+- name: Ensure 
+  ansible.builtin.template:
+    src: node-exporter.service.j2
+    dest: /etc/systemd/system/node-exporter.service
+    mode: "0664"
+    owner: root
+    group: root
+  notify: Restart Node Exporter
+
+- name: Ensure Node Exporter service is started and enabled
+  ansible.builtin.systemd:
+    name: node-exporter
+    state: started
+    enabled: true

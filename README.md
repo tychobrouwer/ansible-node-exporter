@@ -20,7 +20,8 @@ Example Playbook
     - role: tychobrouwer.node_exporter
 
     - role: tychobrouwer.node_exporter
-
+      node_exporter_arch: amd64
+      node_exporter_dir: /opt
 ```
 
 License
