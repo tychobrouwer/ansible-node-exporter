@@ -8,9 +8,8 @@
 
 - name: Parse the JSON response to get the download URL for {{ node_exporter_arch }}
   ansible.builtin.set_fact:
-    linux_download_url: "{{ item.browser_download_url }}"
-  loop: "{{ node_exporter_latest.json.assets | selectattr('browser_download_url', 'search', 'linux_' + node_exporter_arch) | list }}"
-  when: linux_download_url is not defined
+    linux_download_url: "{{ (node_exporter_latest.json.assets | selectattr('browser_download_url', 'search', 'linux-' + node_exporter_arch) | list | first).browser_download_url | default('') }}"
+  when: node_exporter_latest.json is defined
 
 - name: Ensure Prometheus directory exists
   ansible.builtin.file:
